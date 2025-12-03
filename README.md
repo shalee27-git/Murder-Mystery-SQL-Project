@@ -1,8 +1,7 @@
 # Murder-Mystery-SQL-Project
 
-**Title: SQL Murder Mystery – Investigative Analytics Using Advanced SQL**
-
 🕵️‍♀️ **SQL Murder Mystery – Investigative Data Analysis Using SQL**
+
 📌 **Project Overview**
 
 The SQL Murder Mystery is a popular investigative SQL challenge that simulates solving a mystery using only database clues.
@@ -34,7 +33,7 @@ Ability to work with multiple relational tables
 
 📁 **Project Workflow**
 
-1️⃣ Understanding the Database Schema
+1️⃣ _**Understanding the Database Schema**_
 
 Reviewed multiple tables containing:
 Crime reports
@@ -43,21 +42,21 @@ Witness statements
 Vehicle registrations
 Event logs
 
-2️⃣ Identifying the First Clue
+2️⃣ _**Identifying the First Clue**_
 
 Used the initial evidence to narrow down:
 Crime location
 Date & time
 Potential witnesses
 
-3️⃣ Interviews & Evidence Tracking
+3️⃣ _**Interviews & Evidence Tracking**_
 
 Queried witness statements to identify:
 Descriptions of suspects
 Vehicles involved
 Movements around crime time
 
-4️⃣ Narrowing Down the Suspect List
+4️⃣ _**Narrowing Down the Suspect List**_
 
 Cross-referenced:
 Person appearance
@@ -65,30 +64,70 @@ Residency
 License plates
 Known associates
 
-5️⃣ Final Identification
+5️⃣ _**Final Identification**_
 
 Using all evidence, determined the final suspect, their motive, and related proof.
 
 📊 Sample SQL Techniques Used
 -- Example: Using CTEs to track evidence step-by-step
-WITH crime_scene AS (
-    SELECT *
-    FROM crime_report
-    WHERE date = '2018-01-15' AND city = 'SQL City'
-),
-witness_info AS (
-    SELECT *
-    FROM interviews
-    WHERE person_id IN (SELECT witness_id FROM crime_scene)
-)
-SELECT *
-FROM witness_info;
 
--- Example: Identifying a suspect from cross-linked records
-SELECT p.name, p.address, v.plate_number
-FROM person p
-JOIN vehicle v ON p.person_id = v.owner_id
-WHERE v.plate_number LIKE '%H42%';
+WITH liars AS (
+    SELECT 
+        a.employee_id,
+        e.name,
+        a.claimed_location AS claimed_location,
+        kl.room AS real_location,
+        kl.entry_time
+    FROM alibis a
+    JOIN keycard_logs kl 
+       ON a.employee_id = kl.employee_id
+       AND a.claim_time BETWEEN kl.entry_time AND kl.exit_time
+    JOIN employees e ON e.employee_id = a.employee_id
+    WHERE kl.room != a.claimed_location
+),
+
+office_visitors AS (
+    SELECT 
+        kl.employee_id,
+        kl.room,
+        kl.entry_time
+    FROM keycard_logs kl
+    WHERE kl.room = 'CEO Office'
+)
+
+SELECT 
+    e.employee_id,
+    e.name,
+    e.department,
+    e.role,
+
+    c.call_time AS suspicious_call_time,
+    l.claimed_location AS lied_about_location,
+    l.real_location AS actual_location,
+
+    ov.entry_time AS time_entered_ceo_office,
+    ev.description AS evidence_found
+FROM employees e
+
+LEFT JOIN calls c
+    ON e.employee_id = c.caller_id
+    OR e.employee_id = c.receiver_id
+
+LEFT JOIN liars l
+    ON e.employee_id = l.employee_id
+
+LEFT JOIN office_visitors ov
+    ON e.employee_id = ov.employee_id
+
+LEFT JOIN evidence ev
+    ON ev.room = 'CEO Office'
+
+WHERE c.call_time IS NOT NULL
+   OR l.employee_id IS NOT NULL
+   OR ov.employee_id IS NOT NULL
+
+ORDER BY c.call_time DESC NULLS LAST;
+
 
 📝 **Final Outcome**
 
